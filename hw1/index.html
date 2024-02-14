@@ -1,7 +1,173 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 1 index.html here
-	</body>
-</html>
+<p>&nbsp;</p>
+<h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Homework 1: Rasterizer</h1>
+<h2 align="middle">Wil Rothman and Atticus Cull</h2>
+<h2 align="middle">Website: <a href="https://github.com/cal-cs184-student/hw-webpages-sp24-wilrothman/settings/pages">https://github.com/cal-cs184-student/hw-webpages-sp24-wilrothman/settings/pages</a></h2>
+<p><br /><br /></p>
+<div>
+    <h2 align="middle">Overview</h2>
+    This homework had us implement a 2D rasterizer. Given the points of a triangle in a model and their colors, we were to model these in 2D space. Because the number of pixels we had to work with was limited,
+    this homework had us implement anti-aliasing features that gave the illusion of a higher resolution even when there was not. This homework also had us implement model transformations-- integral for animation--
+    had us implement smooth coloring using barycentric coordinates, and had us implement a version of a mipmap with multiple types of sampling. We found this homework interested from both an engineering and visual perspective,
+    and allowed us to watch the algorithms from class come to life.
+    <!-- <p>Give a high-level overview of what you implemented in this homework Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.</p>
+    -->
+    <h2 align="middle">Section I: Rasterization</h2>
+    <h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+    <p>For this, we iterate through each pixel value, given a triangle, and draw the pixel to the screen if it is inside the triangle according to the <code>inside</code> function. This part does not yet implement anti-aliasing, so the triangles will exhibit aliasing until the completion of Part 2 where we can take more than one sample per pixel.
+
+    <p>Our algorithm boxes each triangle using <code>min_x</code>, <code>min_y</code>, <code>max_x</code>, and <code>max_y</code>, where these variables represent the minimum and maximum <strong>x</strong> and <strong>y</strong> values of each triangle. </p>
+    <p>As requested, here is a screenshot of <code>basic/test4.svg</code>. As you can see, the intersecting part of the screen causes no problems.
+        <br>
+    <div align="middle">
+        <table>
+            <tbody>
+            <tr>
+                <td><div align="middle"><img src="images/intersection1.png" width="400px" align="middle" /><br>Top Visible Corner (<code>svg/basic/test4.svg</code>)</div></td>
+                <td><div align="middle"><img src="images/intersection2.png" width="400px" align="middle" /><br>Bottom Visible Corner (<code>svg/basic/test4.svg</code>)</div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- deleteme -->
+    <!--
+  <p>Here is an example 2x2 gridlike structure using an HTML table. Each <strong>tr</strong> is a row and each <strong>td</strong> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
+  <div align="middle">
+  <table>
+  <tbody>
+  <tr>
+  <td><img src="images/image1.png" width="400px" align="middle" />Caption goes here.</td>
+  <td><img src="images/image2.png" width="400px" align="middle" />Caption goes here.</td>
+  </tr>
+  <tr>
+  <td><img src="images/image3.png" width="400px" align="middle" />Caption goes here.</td>
+  <td><img src="images/image4.png" width="400px" align="middle" />Caption goes here.</td>
+  </tr>
+  </tbody>
+  </table>
+  -->
+</div>
+<h3 align="middle">Part 2: Antialiasing triangles</h3>
+Because there is a discrete, finite number of pixels on the screen, our rasterization implementation of <code>RasterizerImp::rasterize_triangle</code> in Part 1 includes <strong>aliasing</strong>. This manifests as jagged edges ("jaggies"),
+as a result of low resolution. This portion introduces <strong>anti-aliasing</strong> to fix this, using a specific strategy called <strong>supersampling</strong>. This means that, for each pixel, we consider <code>RasterizerImp::sample_rate</code> subpixels with continuous, equidistant coordinates,
+and average out their values to render to the framebuffer. Supersampling essentially calculates a higher resolution, and takes local averages to bring back to the target resolution in spite of the pixel constraints. To achieve this, we added an intermediate sampling buffer before the render buffer that we use to store all the super samples. Finally, we took the average RGB values for the samples in each pixel and wrote those averages to the render buffer.
+<br>
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/test4sr1.png" width="400px" align="middle" /><br>Sample rate 1</div></td>
+            <td><div align="middle"><img src="images/test4sr4.png" width="400px" align="middle" /><br>Sample rate 4</div></td>
+            <td><div align="middle"><img src="images/test4sr16.png" width="400px" align="middle" /><br>Sample rate 16</div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br>
+In a very skinny triangle, without super sampling we only get points that are, in this case, completely red or completely white. Then without supersampling, there is no difference between a pixel that is very close to the edge of the trinagle, and only slightly close to the edge of the triangle. Then we get long flat edges which aren't parallel to the edge of the triangle. By supersampling, we approximate a pixel of "intermediate height" as a pixel of intermediate saturation.
+<h3 align="middle">Part 3: Transforms</h3>
+We used the linear transformations' matrix representation covered in class, specifically adding an extra coordinate to account for translations away from the origin.
+<br>
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/transformation_equations.png" width="500px" height="300px" align="middle" /><br>Lecture 4 (slide 26)</div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br>
+
+We thought to have Cubeman do something uniquely Berkeley, so here is a screenshot of him walking the slackline.
+<br>
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/slackline_robot.png" width="500px" height="400px" align="middle" /><br>Cubeman slacklining (<code>docs/my_robot.svg</code>)</div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br>
+
+
+
+<h2 align="middle">Section II: Sampling</h2>
+<h3 align="middle">Part 4: Barycentric coordinates</h3>
+When given the coordinates of the vertices of a triangle, it is often useful to interpolate coordinates within the triangle relative to those vertices. One example where this is useful
+is when we need to obtain smoothly varying color across a triangular surface (or any other surface, for that matter). The <strong>barycentric coordinate system</strong> allows us to
+express coordinates within a triangle as relative to its vertices. The coordinate system maps Barycentric(α, β, γ) → Cartesian(x, y). If 0 < α, β, γ < 1, then the point is within the triangle.
+If 0 ≤ α, β, γ ≤ 1, then the point is within the triangle or on its border. Also, it is required that α + β + γ = 1. The mapping is defined as (x, y) = αA + βB + γC where
+A, B, and C are the cartesian coordinates of the vertices of the triangle. Our program uses barycentric coordinates in <code>RasterizerImp::rasterize_interpolated_color_triangle</code>.
+Below are some examples of this function in use. The first image is a triangle plotted with one red, one green and one blue vertex.
+The second image is a screenshot of <code>task7</code>.
+
+<br>
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/bary_explanation.png" width="500px" height="400px" align="middle" /><br><code>svg/custom/bary.svg</code></div></td>
+            <td><div align="middle"><img src="images/task7.png" width="500px" height="400px" align="middle" /><br><code>svg/basic/test7.svg</code></div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br>
+
+
+<h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+Sometimes, we want image data that is more precise than simple, discrete pixel RGB values. So, a <strong>pixel sample</strong> a theoretical value of a subpixel (which may be the size of a pixel, or smaller).
+If we want to sample a value at a continuous location, it often makes sense to use <strong>texture filtering</strong>, where we interpolate such continuous values given predetermined
+texture sample locations. For instance, <strong>nearest neighbor sampling</strong> interpolates the continuous sample, (u, v), as the value of its <i>nearest neighbor</i>, or in other words,
+the predetermined sample that is least distant from point (u, v). Another method is <strong>bilinear sampling</strong>, which uses linear interpolation individually on the vertical and horizontal axes.
+Here is an example using <code>svg/textmap/test6.svg</code>:
+
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/nearest_1sample.png" width="400px" align="middle" /><br>Nearest Neighbor Sampling (rate: 1)</div></td>
+            <td><div align="middle"><img src="images/nearest_sample16.png" width="400px" align="middle" /><br>Nearest Neighbor Sampling (rate: 16) </div></td>
+            <td><div align="middle"><img src="images/bilinear_1sample.png" width="400px" align="middle" /><br>Bilinear Sampling (rate: 1) </div></td>
+            <td><div align="middle"><img src="images/bilinear_sample16.png" width="400px" align="middle" /><br>Bilinear Sampling (rate: 16) </div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+This figure illustrates the reason why bilinear sampling is widely considered the better method. It does a better job at retaining the quality of the original image, especially for small details
+like the UC Berkeley campanile's bell as depicted above.
+
+<h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+A <strong>mipmap</strong> is a data structure that stores images of decreasing quality in order to give the developer a choice between varying image qualities, perhaps when the camera is far away or at an eccentric angle, for example,
+which can efficiently reduce aliasing, which may be important for an application like, for example, a video game.
+<strong>Level sampling</strong>, then, is the strategic selection of a mipmap. The way we implemented it depends on a variable <code>lsm</code>, which can be toggled with the <code>L</code> key.
+Our level sampling is determined by the value of this variable as follows:
+<ul>
+    <li><code>L_ZERO</code>: We use zero sampling, meaning the mipmap level is always set to 0. As other mipmap levels do not need to be considered, this has the best time complexity because
+    as only one image needs to be rendered. It is also the most memory efficient. Despite this, however, it has the worst anti-aliasing effects as it does not
+    utilize the anti-aliasing properties of the mipmap.</li>
+    <li><code>L_NEAREST</code>: We use nearest-neighbor sampling, meaning we use the nearest appropriate mipmap level, one that is discrete and not continuous. This has the same memory efficiency as bilinear sampling, but has better time efficiency
+    as calculating minimum distance requires less computation than performing bilinear interpolation. Though it is better than zero level sampling, it is worse at antialiasing than bilinear level sampling.</li>
+    <li><code>L_LINEAR</code>: We use bilinear sampling, meaning we perform vertical and horizontal linear interpolations and determine the mipmap as a weighted sum. This has the same memory efficiency as nearest neighbor sampling, but has worse time effiency.
+    It trades worse time efficiency for better anti-aliasing effects, which is why <i>it is generally considered the best type of level sampling</i>.</li>
+</ul>
+
+And here are four versions of the same image
+<div align="middle">
+    <table>
+        <tbody>
+        <tr>
+            <td><div align="middle"><img src="images/L0PN.png" width="400px" align="middle" /><br><code>L_ZERO</code>, <code>P_NEAREST</code></div></td>
+            <td><div align="middle"><img src="images/L0PL.png" width="400px" align="middle" /><br><code>L_ZERO</code>, <code>P_LINEAR</code></div></td>
+            <td><div align="middle"><img src="images/LNPN.png" width="400px" align="middle" /><br><code>L_NEAREST</code>, <code>P_NEAREST</code></div></td>
+            <td><div align="middle"><img src="images/LNPL.png" width="400px" align="middle" /><br><code>L_NEAREST</code>, <code>P_LINEAR</code></div></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</div>
